@@ -4,6 +4,7 @@ on:
     branches:
       - master
       - develop
+      - bindings-ci
     tags:
       - 'v[0-9]+.[0-9]+.[0-9]+'
   pull_request:
@@ -177,46 +178,22 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v2
-      - name: Setup linux toolchain
-        if: contains(matrix.target, '-linux-') && startsWith(matrix.target, 'x86_64-')
-        run: |
-          sudo apt-get update -y
-          sudo apt-get install -y libdrm-dev
-      - name: Setup cross linux toolchain
+      - name: Setup linux cross toolchain
         if: contains(matrix.target, '-linux-') && !startsWith(matrix.target, 'x86_64-')
         run: |
-          case "${{ matrix.target }}" in
-            i686-*) SYSTEM_ARCH=i386 ;;
-            arm*) SYSTEM_ARCH=armhf ;;
-            aarch64*) SYSTEM_ARCH=arm64 ;;
-          esac
-          GCC_TARGET=$(printf "${{ matrix.target }}" | sed 's/-unknown-/-/' | sed 's/arm[^-]*/arm/g')
-          ENV_TARGET=$(printf "${{ matrix.target }}" | tr '-' '_')
-          ENV_TARGET_UC=$(printf "${ENV_TARGET}" | tr '[[:lower:]]' '[[:upper:]]')
-          sudo rm -f /etc/apt/sources.list.d/*.list
-          case "${{ matrix.target }}" in
-            arm* | aarch64*)
-          sudo tee /etc/apt/sources.list << EOF
-          deb [arch=i386,amd64] http://archive.ubuntu.com/ubuntu/ jammy main universe
-          deb [arch=i386,amd64] http://archive.ubuntu.com/ubuntu/ jammy-updates main universe
-          deb [arch=i386,amd64] http://security.ubuntu.com/ubuntu/ jammy-security main universe
-          deb [arch=armhf,arm64] http://ports.ubuntu.com/ubuntu-ports/ jammy main universe
-          deb [arch=armhf,arm64] http://ports.ubuntu.com/ubuntu-ports/ jammy-updates main universe
-          deb [arch=armhf,arm64] http://ports.ubuntu.com/ubuntu-ports/ jammy-security main universe
-          EOF
-              ;;
-          esac
-          sudo dpkg --add-architecture ${SYSTEM_ARCH}
-          dpkg --print-foreign-architectures
+          GCC_TARGET=$(printf "${{ matrix.target }}" | sed 's/-unknown-/-/;s/arm[^-]*/arm/g;s/x86_64/x86-64/')
+          ENV_TARGET=$(printf "${{ matrix.target }}" | tr '-' '_'  | tr '[[:lower:]]' '[[:upper:]]')
           sudo apt-get update -y
-          sudo apt-mark hold grub-efi-amd64-signed
-          sudo apt-get upgrade -y --fix-broken
-          sudo apt-get install -y libdrm-dev:${SYSTEM_ARCH} gcc-${GCC_TARGET} pkg-config
-          echo "CARGO_TARGET_${ENV_TARGET_UC}_LINKER=${GCC_TARGET}-gcc" >> $GITHUB_ENV
-          echo "PKG_CONFIG_ALLOW_CROSS=1" >> $GITHUB_ENV
-          echo "PKG_CONFIG_${ENV_TARGET}=${GCC_TARGET}-pkg-config" >> $GITHUB_ENV
-          echo "PKG_CONFIG=${GCC_TARGET}-pkg-config" >> $GITHUB_ENV
+          sudo apt-get install -y gcc-${GCC_TARGET}
+          echo "CARGO_TARGET_${ENV_TARGET}_LINKER=${GCC_TARGET}-gcc" >> $GITHUB_ENV
           echo "BINDGEN_EXTRA_CLANG_ARGS=--sysroot=/usr/${GCC_TARGET}" >> $GITHUB_ENV
+      - name: Fetch drm headers
+        run: |
+          mkdir drm
+          wget -O drm/drm.h https://github.com/torvalds/linux/raw/master/include/uapi/drm/drm.h
+          wget -O drm/drm_mode.h https://github.com/torvalds/linux/raw/master/include/uapi/drm/drm_mode.h
+          echo "LIBDRM_INCLUDE_PATH=${PWD}/drm" >> $GITHUB_ENV
+          echo "BINDGEN_EXTRA_CLANG_ARGS=-D __user= ${BINDGEN_EXTRA_CLANG_ARGS}" >> $GITHUB_ENV
       - name: Setup Rust
         uses: actions-rs/toolchain@v1
         with:

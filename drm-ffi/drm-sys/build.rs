@@ -33,13 +33,17 @@ mod use_bindgen {
         println!("{}", contents);
 
         let pkgconf = pkg_config::Config::new();
-        let lib = pkgconf.probe("libdrm").unwrap();
+        let include_paths = if let Ok(value) = var("LIBDRM_INCLUDE_PATH") {
+            vec![PathBuf::from(value)]
+        } else {
+            pkgconf.probe("libdrm").unwrap().include_paths
+        };
 
         let config = CodegenConfig::all();
 
         Builder::default()
             .clang_args(
-                lib.include_paths
+                include_paths
                     .into_iter()
                     .map(|path| "-I".to_string() + &path.into_os_string().into_string().unwrap()),
             )
