@@ -226,15 +226,14 @@ jobs:
         with:
           command: build
           args: --manifest-path drm-ffi/drm-sys/Cargo.toml --target ${{ matrix.target }} --features update_bindings
+      - name: Copy bindings
+      - run: cp drm-ffi/drm-sys/src/bindings.rs bindings-${{ matrix.rust }}-${{ matrix.target }}.rs
       - name: Upload bindings
         if: matrix.task == 'bindings'
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: bindings
-          path: |
-            drm-ffi/drm-sys/${{ env.DRM_SYS_BINDINGS_FILE }}
-            LICENSE
-            README.md
+          path: bindings-*.rs
       - name: Build
         uses: actions-rs/cargo@v1
         with:
@@ -258,7 +257,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Download bindings
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: bindings
       - name: Create pull request

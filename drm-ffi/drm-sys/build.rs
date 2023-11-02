@@ -167,15 +167,6 @@ mod use_bindgen {
         println!("cargo:rerun-if-changed={}", dest_file.display());
 
         fs::copy(bind_file, &dest_file).unwrap();
-
-        if let Ok(github_env) = var("GITHUB_ENV") {
-            let mut env_file = fs::OpenOptions::new()
-                .create(true)
-                .append(true)
-                .open(github_env)
-                .unwrap();
-            writeln!(env_file, "DRM_SYS_BINDINGS_FILE={}", dest_file.display()).unwrap();
-        }
     }
 }
 
