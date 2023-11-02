@@ -161,6 +161,10 @@ jobs:
             os: ubuntu-22.04
             rust: stable
             target: aarch64-unknown-linux-gnu
+          - task: bindings
+            os: ubuntu-22.04
+            rust: stable
+            target: riscv64gc-unknown-linux-gnu
           # Test channels
           - task: channels
             os: ubuntu-22.04
@@ -180,7 +184,7 @@ jobs:
       - name: Setup linux cross toolchain
         if: contains(matrix.target, '-linux-') && !startsWith(matrix.target, 'x86_64-')
         run: |
-          GCC_TARGET=$(printf "${{ matrix.target }}" | sed 's/-unknown-/-/;s/arm[^-]*/arm/g')
+          GCC_TARGET=$(printf "${{ matrix.target }}" | sed 's/-unknown-/-/;s/arm[^-]*/arm/;s/riscv[^-]*/riscv64/')
           ENV_TARGET=$(printf "${{ matrix.target }}" | tr '-' '_'  | tr '[[:lower:]]' '[[:upper:]]')
           sudo apt-get update -y
           sudo apt-get install -y gcc-${GCC_TARGET}
