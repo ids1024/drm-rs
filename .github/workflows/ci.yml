@@ -227,7 +227,7 @@ jobs:
           command: build
           args: --manifest-path drm-ffi/drm-sys/Cargo.toml --target ${{ matrix.target }} --features update_bindings
       - name: Copy bindings
-      - run: cp drm-ffi/drm-sys/src/bindings.rs bindings-${{ matrix.rust }}-${{ matrix.target }}.rs
+        run: cp drm-ffi/drm-sys/src/bindings.rs bindings-${{ matrix.rust }}-${{ matrix.target }}.rs
       - name: Upload bindings
         if: matrix.task == 'bindings'
         uses: actions/upload-artifact@v3
