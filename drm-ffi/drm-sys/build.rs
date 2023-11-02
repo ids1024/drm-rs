@@ -158,7 +158,7 @@ mod use_bindgen {
 
     #[cfg(feature = "update_bindings")]
     pub fn update_bindings() {
-        use std::{fs, io::Write};
+        use std::fs;
 
         let out_path = var("OUT_DIR").unwrap();
         let bind_file = PathBuf::from(out_path).join("bindings.rs");
